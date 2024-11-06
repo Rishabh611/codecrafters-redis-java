@@ -19,8 +19,23 @@ public class Main {
 			// Wait for connection from client.
 			clientSocket = serverSocket.accept();
 
-			clientSocket.getOutputStream().write("+PONG\r\n".getBytes());
+			BufferedReader in = new BufferedReader(
+					new InputStreamReader(clientSocket.getInputStream())
+			);
 
+			BufferedWriter out = new BufferedWriter(
+					new OutputStreamWriter(clientSocket.getOutputStream())
+			);
+
+			String inputLine;
+
+			while((inputLine = in.readLine()) != null) {
+				System.out.println(inputLine);
+				if(inputLine.equals("PING")) {
+					out.write("+PONG\r\n");
+					out.flush();
+				}
+			}
 		} catch (IOException e) {
 			System.out.println("IOException: " + e.getMessage());
 		} finally {
