@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws IOException {
@@ -41,10 +43,22 @@ public class Main {
 
 			while((inputLine = in.readLine()) != null) {
 				System.out.println(inputLine);
-				if(inputLine.equals("PING")) {
-					out.write("+PONG\r\n");
-					out.flush();
+				char typeChar = inputLine.charAt(0);
+				if (typeChar == '+') {
+					String str = RedisProtocolParser.parseSimpleString(inputLine.substring(1));
+				} else if (typeChar == '-') {
+					RedisError error = RedisProtocolParser.parseError(inputLine.substring(1));
+				} else if (typeChar == ':') {
+					int num = RedisProtocolParser.parseInteger(inputLine.substring(1));
+				} else if (typeChar == '$') {
+					String bulkString = RedisProtocolParser.parseBulkString(inputLine.substring(1));
+				} else if (typeChar == '*') {
+					ArrayList<String> arr = (ArrayList<String>) RedisProtocolParser.parseArray(inputLine.substring(1));
 				}
+//				if(inputLine.equals("PING")) {
+//					out.write("+PONG\r\n");
+//					out.flush();
+//				}
 			}
 		} catch (IOException e) {
 			System.out.println("IOException " + e.getMessage());
