@@ -54,6 +54,10 @@ public class Main {
 					String bulkString = RedisProtocolParser.parseBulkString(inputLine.substring(1));
 				} else if (typeChar == '*') {
 					ArrayList<String> arr = (ArrayList<String>) RedisProtocolParser.parseArray(inputLine.substring(1));
+					if (arr.get(0).equalsIgnoreCase("echo")){
+						out.write("+" + arr.get(1) + "\r\n");
+						out.flush();
+					}
 				}
 //				if(inputLine.equals("PING")) {
 //					out.write("+PONG\r\n");
