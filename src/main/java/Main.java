@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Main {
@@ -41,6 +42,7 @@ public class Main {
 
 			char[] buffer = new char[1024];
 			StringBuilder requestBuilder = new StringBuilder();
+			HashMap<String, String> map = new HashMap<>();
 			while(true) {
 				int byteRead = in.read(buffer);
 				if (byteRead == -1) break;
@@ -66,7 +68,16 @@ public class Main {
 					} else if(arr.get(0).equalsIgnoreCase("ping")){
 						out.write("+PONG\r\n");
 						out.flush();
+					} else if(arr.get(0).equalsIgnoreCase("set")){
+						map.put(arr.get(1), arr.get(2));
+						System.out.println(map);
+						out.write("+OK\r\n");
+						out.flush();
+					} else if (arr.get(0).equalsIgnoreCase("get")) {
+						out.write("+" + map.get(arr.get(1))+"\r\n");
+						out.flush();
 					}
+
 				}
 //				if(inputLine.equals("PING")) {
 //					out.write("+PONG\r\n");
