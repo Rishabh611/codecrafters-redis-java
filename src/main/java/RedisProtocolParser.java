@@ -1,8 +1,11 @@
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 public class RedisProtocolParser {
     static final String CLRF = "\r\n";
+
 
     public static String parseSimpleString(String data){
         try {
@@ -43,7 +46,7 @@ public class RedisProtocolParser {
      public static String parseBulkString(String data) {
        try{
            if (data.endsWith(CLRF)) {
-               int stringLength = data.charAt(0);
+               int stringLength = Integer.parseInt(String.valueOf(data.charAt(0)));
                data = data.substring(1, data.length() - CLRF.length());
                String result = data.substring(CLRF.length());
                if (result.length() == stringLength){
@@ -61,24 +64,52 @@ public class RedisProtocolParser {
     }
 
      public static List<String> parseArray(String data) {
+        HashSet<Character> typeChars = new HashSet<>(Arrays.asList('+', '-', '$', ':', '*'));
         try{
-            int arrayLength = data.charAt(0);
+            int i = 0;
+            while(Character.isDigit(data.charAt(i))){
+                i++;
+            }
+            int arrayLength = Integer.parseInt(data.substring(0, i));
             List<String> arr = new ArrayList<>();
 
-            data = data.substring(1);
+            String remaining = data.substring(i+CLRF.length());
+            i = 0;
 
-            int i = 0;
-
-            while(i < data.length()) {
-                int j = i;
-
-                while (! data.startsWith(CLRF, j)){
-                    j++;
+            while(i < remaining.length() && arr.size() < arrayLength) {
+                while(i < remaining.length() && Character.isWhitespace(remaining.charAt(i))){
+                    i++;
                 }
-                arr.add(data.substring(i, j));
-                i = j + CLRF.length();
+                if(i>=remaining.length()) break;
+
+                char typeChar = remaining.charAt(i);
+                if(!typeChars.contains(typeChar)){
+                    throw new RedisError();
+                }
+
+                if (typeChar == '$') {
+//                    System.out.println(remaining);
+                    int j = i + 1;
+                    while(Character.isDigit(remaining.charAt(j))){
+                        j++;
+                    }
+                    int numLength = j - i - 1;
+
+                    int stringEnd = 1 + numLength + 2 * CLRF.length() + Integer.parseInt(remaining.substring(i + 1, j));
+                    String substring = remaining.substring(i + 1, i + stringEnd);
+//                    System.out.println(substring);
+                    if(substring.endsWith(CLRF)){
+                        arr.add(RedisProtocolParser.parseBulkString(substring));
+                    } else{
+                        throw new RedisError();
+                    }
+                    i = i + stringEnd;
+
+                }
+
             }
 
+//            System.out.println(arr);
             if (arr.size() == arrayLength){
                 return arr;
             } else {

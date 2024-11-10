@@ -39,10 +39,15 @@ public class Main {
 					new OutputStreamWriter(clientSocket.getOutputStream())
 			);
 
-			String inputLine;
+			char[] buffer = new char[1024];
+			StringBuilder requestBuilder = new StringBuilder();
+			while(true) {
+				int byteRead = in.read(buffer);
+				if (byteRead == -1) break;
 
-			while((inputLine = in.readLine()) != null) {
-				System.out.println(inputLine);
+				requestBuilder.append(new String(buffer, 0, byteRead));
+				String inputLine = requestBuilder.toString();
+//				System.out.println(inputLine);
 				char typeChar = inputLine.charAt(0);
 				if (typeChar == '+') {
 					String str = RedisProtocolParser.parseSimpleString(inputLine.substring(1));
@@ -54,8 +59,12 @@ public class Main {
 					String bulkString = RedisProtocolParser.parseBulkString(inputLine.substring(1));
 				} else if (typeChar == '*') {
 					ArrayList<String> arr = (ArrayList<String>) RedisProtocolParser.parseArray(inputLine.substring(1));
+//					System.out.println(arr);
 					if (arr.get(0).equalsIgnoreCase("echo")){
 						out.write("+" + arr.get(1) + "\r\n");
+						out.flush();
+					} else if(arr.get(0).equalsIgnoreCase("ping")){
+						out.write("+PONG\r\n");
 						out.flush();
 					}
 				}
