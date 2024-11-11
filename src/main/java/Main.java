@@ -41,49 +41,45 @@ public class Main {
 			);
 
 			char[] buffer = new char[1024];
-			StringBuilder requestBuilder = new StringBuilder();
+
 			HashMap<String, String> map = new HashMap<>();
+			RedisClient redisClient = new RedisClient(clientSocket, map);
 			while(true) {
+				StringBuilder requestBuilder = new StringBuilder();
 				int byteRead = in.read(buffer);
 				if (byteRead == -1) break;
 
 				requestBuilder.append(new String(buffer, 0, byteRead));
 				String inputLine = requestBuilder.toString();
-//				System.out.println(inputLine);
+				System.out.println("input: " + inputLine.replace("\r", "\\r").replace("\n", "\\n"));
 				char typeChar = inputLine.charAt(0);
-				if (typeChar == '+') {
-					String str = RedisProtocolParser.parseSimpleString(inputLine.substring(1));
-				} else if (typeChar == '-') {
-					RedisError error = RedisProtocolParser.parseError(inputLine.substring(1));
-				} else if (typeChar == ':') {
-					int num = RedisProtocolParser.parseInteger(inputLine.substring(1));
-				} else if (typeChar == '$') {
-					String bulkString = RedisProtocolParser.parseBulkString(inputLine.substring(1));
-				} else if (typeChar == '*') {
-					ArrayList<String> arr = (ArrayList<String>) RedisProtocolParser.parseArray(inputLine.substring(1));
-//					System.out.println(arr);
-					if (arr.get(0).equalsIgnoreCase("echo")){
-						out.write("+" + arr.get(1) + "\r\n");
-						out.flush();
-					} else if(arr.get(0).equalsIgnoreCase("ping")){
-						out.write("+PONG\r\n");
-						out.flush();
-					} else if(arr.get(0).equalsIgnoreCase("set")){
-						map.put(arr.get(1), arr.get(2));
-						System.out.println(map);
-						out.write("+OK\r\n");
-						out.flush();
-					} else if (arr.get(0).equalsIgnoreCase("get")) {
-						out.write("+" + map.get(arr.get(1))+"\r\n");
-						out.flush();
+				inputLine = inputLine.substring(1);
+				System.out.println("Type Character: " + typeChar);
+				try {
+					switch (typeChar) {
+						case '+':
+							redisClient.handleSimpleString(inputLine);
+							break;
+						case '-':
+							redisClient.handleError(inputLine);
+							break;
+						case ':':
+							redisClient.handleInteger(inputLine);
+							break;
+						case '$':
+							redisClient.handleBulkString(inputLine);
+							break;
+						case '*':
+							redisClient.handleArray(inputLine);
+						default:
+							System.out.println("Unknown command type " + typeChar);
+							break;
 					}
-
+				} catch (IOException | RedisError e) {
+					throw new RuntimeException(e);
 				}
-//				if(inputLine.equals("PING")) {
-//					out.write("+PONG\r\n");
-//					out.flush();
-//				}
 			}
+
 		} catch (IOException e) {
 			System.out.println("IOException " + e.getMessage());
 		} finally {

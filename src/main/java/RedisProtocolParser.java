@@ -44,10 +44,15 @@ public class RedisProtocolParser {
     }
 
      public static String parseBulkString(String data) {
+         System.out.println("Data to be parsed to String " + data.replace("\r", "\\r").replace("\n", "\\n"));
        try{
            if (data.endsWith(CLRF)) {
-               int stringLength = Integer.parseInt(String.valueOf(data.charAt(0)));
-               data = data.substring(1, data.length() - CLRF.length());
+               int i = 0;
+               while(Character.isDigit(data.charAt(i))){
+                   i++;
+               }
+               int stringLength = Integer.parseInt(data.substring(0,i));
+               data = data.substring(i, data.length() - CLRF.length());
                String result = data.substring(CLRF.length());
                if (result.length() == stringLength){
                    return result;
@@ -64,6 +69,7 @@ public class RedisProtocolParser {
     }
 
      public static List<String> parseArray(String data) {
+        System.out.println("Data: " + data.replace("\r", "\\r").replace("\n", "\\n") + "to be parsed as an array");
         HashSet<Character> typeChars = new HashSet<>(Arrays.asList('+', '-', '$', ':', '*'));
         try{
             int i = 0;
@@ -71,6 +77,7 @@ public class RedisProtocolParser {
                 i++;
             }
             int arrayLength = Integer.parseInt(data.substring(0, i));
+            System.out.println("Array of length " + arrayLength + " to be created");
             List<String> arr = new ArrayList<>();
 
             String remaining = data.substring(i+CLRF.length());
