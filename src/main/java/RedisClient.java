@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.Socket;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 public class RedisClient {
@@ -7,8 +8,10 @@ public class RedisClient {
     BufferedReader in;
     BufferedWriter out;
 
-    HashMap<String, String> map;
-    public RedisClient(Socket socket, HashMap<String, String> map) throws IOException {
+    HashMap<String, String> storageMap;
+    HashMap<String, LocalDateTime> expirationMap;
+
+    public RedisClient(Socket socket, HashMap<String, String> storageMap, HashMap<String, LocalDateTime> expirationMap) throws IOException {
         this.clientSocket = socket;
         this.in = new BufferedReader(
                 new InputStreamReader(socket.getInputStream())
@@ -16,7 +19,8 @@ public class RedisClient {
         this.out = new BufferedWriter(
                 new OutputStreamWriter(socket.getOutputStream())
         );
-        this.map = map;
+        this.storageMap = storageMap;
+        this.expirationMap = expirationMap;
     }
 
     public void handleSimpleString(String input) throws IOException {
@@ -48,7 +52,7 @@ public class RedisClient {
         String output = switch (command) {
             case "echo" -> "+" + arr.get(1) + "\r\n";
             case "ping" -> "+PONG\r\n";
-            case "set" -> handleSET(arr.get(1), arr.get(2));
+            case "set" -> handleSET(arr);
             case "get" -> handleGET(arr.get(1));
             default -> throw new IllegalStateException("Unexpected value: " + command);
         };
@@ -56,16 +60,24 @@ public class RedisClient {
         out.flush();
     }
 
-    private String handleSET(String key, String value){
-        map.put(key, value);
+    private String handleSET(List<String> array){
+        String key = array.get(1);
+        String value = array.get(2);
+        if(array.get(3).equalsIgnoreCase("px")){
+            int expirySeconds = Integer.parseInt(array.get(4));
+            expirationMap.put(key, LocalDateTime.now().plusSeconds(expirySeconds));
+        }
+        storageMap.put(key, value);
         return "+OK\r\n";
     }
 
     private String handleGET(String key){
-        if(map.containsKey(key)){
-           return "+" + map.get(key) + "\r\n";
+        if(storageMap.containsKey(key) && LocalDateTime.now().isBefore(expirationMap.get(key))){
+           return "+" + storageMap.get(key) + "\r\n";
         } else {
            return "$-1\r\n";
         }
     }
+
+    private
 }
