@@ -63,9 +63,11 @@ public class RedisClient {
     private String handleSET(List<String> array){
         String key = array.get(1);
         String value = array.get(2);
+        System.out.println("Adding key: " + key + " with value " + value);
         if(array.get(3).equalsIgnoreCase("px")){
             int expirySeconds = Integer.parseInt(array.get(4));
             expirationMap.put(key, LocalDateTime.now().plusSeconds(expirySeconds));
+            System.out.println("The key will expire in " + expirySeconds + " in local time " + LocalDateTime.now().plusSeconds(expirySeconds));
         }
         storageMap.put(key, value);
         return "+OK\r\n";
