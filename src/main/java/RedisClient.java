@@ -74,7 +74,8 @@ public class RedisClient {
             return "+OK\r\n";
         }
         else{
-            throw new RedisError();
+            storageMap.put(key, value);
+            return "+OK\r\n"
         }
     }
 
