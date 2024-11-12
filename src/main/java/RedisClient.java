@@ -45,7 +45,7 @@ public class RedisClient {
         out.flush();
     }
 
-    public void handleArray(String input) throws IOException {
+    public void handleArray(String input) throws IOException, RedisError {
         List<String> arr = RedisProtocolParser.parseArray(input);
         System.out.println("Array generated " + arr);
         String command = arr.getFirst().toLowerCase();
