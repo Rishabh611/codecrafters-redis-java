@@ -65,12 +65,14 @@ public class RedisClient {
         String key = array.get(1);
         String value = array.get(2);
         System.out.println("Adding key: " + key + " with value " + value);
-        if(array.size() > 2 && array.get(3).equalsIgnoreCase("px")){
-            int expirySeconds = Integer.parseInt(array.get(4));
-            Instant expiryTime = Instant.now().plusMillis(expirySeconds);
-            storageMap.put(key, value);
-            System.out.println("The key will expire in " + expirySeconds * 0.001 + " in local time " + expiryTime);
-            expirationMap.put(key, expiryTime);
+        if(array.size() > 2 ){
+            if(array.get(3).equalsIgnoreCase("px")){
+                int expirySeconds = Integer.parseInt(array.get(4));
+                Instant expiryTime = Instant.now().plusMillis(expirySeconds);
+                storageMap.put(key, value);
+                System.out.println("The key will expire in " + expirySeconds * 0.001 + " in local time " + expiryTime);
+                expirationMap.put(key, expiryTime);
+            }
         }
         else{
             storageMap.put(key, value);
