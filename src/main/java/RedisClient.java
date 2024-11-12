@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.Socket;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -9,9 +10,9 @@ public class RedisClient {
     BufferedWriter out;
 
     HashMap<String, String> storageMap;
-    HashMap<String, LocalDateTime> expirationMap;
+    HashMap<String, Instant> expirationMap;
 
-    public RedisClient(Socket socket, HashMap<String, String> storageMap, HashMap<String, LocalDateTime> expirationMap) throws IOException {
+    public RedisClient(Socket socket, HashMap<String, String> storageMap, HashMap<String, Instant> expirationMap) throws IOException {
         this.clientSocket = socket;
         this.in = new BufferedReader(
                 new InputStreamReader(socket.getInputStream())
@@ -66,9 +67,10 @@ public class RedisClient {
         System.out.println("Adding key: " + key + " with value " + value);
         if(array.get(3).equalsIgnoreCase("px")){
             int expirySeconds = Integer.parseInt(array.get(4));
+            Instant expiryTime = Instant.now().plusMillis(expirySeconds);
             storageMap.put(key, value);
-            System.out.println("The key will expire in " + expirySeconds * 0.001 + " in local time " + LocalDateTime.now().plusSeconds((long) (expirySeconds * 0.001)));
-            expirationMap.put(key, LocalDateTime.now().plusSeconds((long) (expirySeconds * 0.001)));
+            System.out.println("The key will expire in " + expirySeconds * 0.001 + " in local time " + expiryTime);
+            expirationMap.put(key, expiryTime);
             return "+OK\r\n";
         }
         else{
@@ -77,10 +79,17 @@ public class RedisClient {
     }
 
     private String handleGET(String key){
-        if(storageMap.containsKey(key) && LocalDateTime.now().isBefore(expirationMap.get(key))){
-           return "+" + storageMap.get(key) + "\r\n";
+        Instant expirationTime = expirationMap.get(key);
+        if(expirationTime != null && expirationTime.isBefore(Instant.now())){
+            storageMap.remove(key);
+            expirationMap.remove(key);
+            return "$-1\r\n";
+        }
+        String value = storageMap.get(key);
+        if (value == null) {
+            return "$-1\r\n";
         } else {
-           return "$-1\r\n";
+            return "$" + value.length() + "\r\n" + value + "\r\n";
         }
     }
 }

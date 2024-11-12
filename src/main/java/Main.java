@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,7 +45,7 @@ public class Main {
 			char[] buffer = new char[1024];
 
 			HashMap<String, String> storageMap = new HashMap<>();
-			HashMap<String, LocalDateTime> expirationMap = new HashMap<>();
+			HashMap<String, Instant> expirationMap = new HashMap<>();
 			RedisClient redisClient = new RedisClient(clientSocket, storageMap, expirationMap);
 			while(true) {
 				StringBuilder requestBuilder = new StringBuilder();
