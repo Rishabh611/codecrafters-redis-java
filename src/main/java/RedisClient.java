@@ -60,18 +60,20 @@ public class RedisClient {
         out.flush();
     }
 
-    private String handleSET(List<String> array){
+    private String handleSET(List<String> array) throws RedisError {
         String key = array.get(1);
         String value = array.get(2);
         System.out.println("Adding key: " + key + " with value " + value);
         if(array.get(3).equalsIgnoreCase("px")){
             int expirySeconds = Integer.parseInt(array.get(4));
-            expirationMap.put(key, LocalDateTime.now().plusSeconds((long) (expirySeconds * 0.001)));
             storageMap.put(key, value);
             System.out.println("The key will expire in " + expirySeconds * 0.001 + " in local time " + LocalDateTime.now().plusSeconds((long) (expirySeconds * 0.001)));
+            expirationMap.put(key, LocalDateTime.now().plusSeconds((long) (expirySeconds * 0.001)));
+            return "+OK\r\n";
         }
-
-        return "+OK\r\n";
+        else{
+            throw new RedisError();
+        }
     }
 
     private String handleGET(String key){
