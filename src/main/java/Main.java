@@ -73,6 +73,7 @@ public class Main {
 							break;
 						case '*':
 							redisClient.handleArray(inputLine);
+							break;
 						default:
 							System.out.println("Unknown command type " + typeChar);
 							break;
