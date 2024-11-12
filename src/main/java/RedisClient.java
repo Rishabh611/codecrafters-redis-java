@@ -78,6 +78,4 @@ public class RedisClient {
            return "$-1\r\n";
         }
     }
-
-    private
 }
