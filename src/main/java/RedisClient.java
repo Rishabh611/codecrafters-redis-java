@@ -50,18 +50,27 @@ public class RedisClient {
         List<String> arr = RedisProtocolParser.parseArray(input);
         System.out.println("Array generated " + arr);
         String command = arr.getFirst().toLowerCase();
-        String output = switch (command) {
-            case "echo" -> "+" + arr.get(1) + "\r\n";
-            case "ping" -> "+PONG\r\n";
+         switch (command) {
+            case "echo" -> handleEcho(arr.get(1));
+            case "ping" -> handlePing();
             case "set" -> handleSET(arr);
             case "get" -> handleGET(arr.get(1));
+            case "config" -> handleConfig(arr.get(1), arr.get(2));
             default -> throw new IllegalStateException("Unexpected value: " + command);
         };
-        out.write(output);
+    }
+
+    private void handleEcho(String str) throws IOException {
+        out.write("+" + str + "\r\n");
         out.flush();
     }
 
-    private String handleSET(List<String> array) throws RedisError {
+    private void handlePing() throws IOException {
+        out.write("+PONG\r\n");
+        out.flush();
+    }
+
+    private void handleSET(List<String> array) throws RedisError, IOException {
         String key = array.get(1);
         String value = array.get(2);
         System.out.println("Adding key: " + key + " with value " + value);
@@ -77,21 +86,44 @@ public class RedisClient {
         else{
             storageMap.put(key, value);
         }
-        return "+OK\r\n";
+        out.write("+OK\r\n");
+        out.flush();
     }
 
-    private String handleGET(String key){
+    private void handleGET(String key) throws IOException {
+        String res = null;
         Instant expirationTime = expirationMap.get(key);
         if(expirationTime != null && expirationTime.isBefore(Instant.now())){
             storageMap.remove(key);
             expirationMap.remove(key);
-            return "$-1\r\n";
+            res = "$-1\r\n";
+            out.write(res);
+            out.flush();
+        }else {
+            String value = storageMap.get(key);
+            if (value == null) {
+                res = "$-1\r\n";
+            } else {
+                res = "$" + value.length() + "\r\n" + value + "\r\n";
+            }
+            out.write(res);
+            out.flush();
         }
-        String value = storageMap.get(key);
-        if (value == null) {
-            return "$-1\r\n";
+
+    }
+
+    private void handleConfig(String subcommand, String parameter) throws RedisError, IOException {
+        System.out.println("Subcommand " + subcommand + " and parameter: " + parameter);
+        if (subcommand.equalsIgnoreCase("get")) {
+            String res = switch(parameter.toLowerCase()) {
+                case "dir" -> Main.dir;
+                case "dbfilename" -> Main.fileName;
+                default -> throw new RedisError();
+            };
+            out.write("*2\r\n$" + parameter.length() + "\r\n" + parameter + "\r\n$" + res.length() + "\r\n" + res + "\r\n");
+            out.flush();
         } else {
-            return "$" + value.length() + "\r\n" + value + "\r\n";
+            throw new RedisError();
         }
     }
 }

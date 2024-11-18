@@ -2,15 +2,17 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-
 public class Main {
+	public static String dir = null;
+	public static String fileName = null;
     public static void main(String[] args) throws IOException {
 	    // You can use print statements as follows for debugging, they'll be visible when running tests.
 	    System.out.println("Logs from your program will appear here!");
+		if (args.length > 0) {
+			dir = args[1];
+			fileName = args[3];
+		}
 
 		ServerSocket serverSocket = null;
 		int port = 6379;
